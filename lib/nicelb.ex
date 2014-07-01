@@ -1,36 +1,34 @@
+defmodule Nicelb.Utils do
+  @max 1073741824
+  defmacro __using__(_) do
+    quote do
+      defp random_id do
+        case :erlang.get(:random_seed) do
+          seed when is_tuple(seed) ->
+            :quickrand.uniform(unquote(@max))
+          :undefined -> 3
+            :quickrand.seed
+            :quickrand.uniform(unquote(@max))
+        end
+      end
+    end
+  end
+end
+
 defmodule Nicelb do
   use Application
-
-  @max 1073741824
+  use Nicelb.Utils
 
   def start(_type, _args) do
     import Supervisor.Spec, warn: false
 
     :ets.new :nicelb_catalogue, [:ordered_set, :public, :named_table, {:read_concurrency, true}, {:write_concurrency, true}]
     children = [
-      # worker(Nicelb.Worker, [arg1, arg2, arg3])
+      worker(NiceLB.Worker, [])
     ]
 
     opts = [strategy: :one_for_one, name: Nicelb.Supervisor]
     Supervisor.start_link(children, opts)
-  end
-
-  defp random_id do
-    case :erlang.get(:random_seed) do
-      seed when is_tuple(seed) -> 
-        :quickrand.uniform(@max)
-      :undefined -> 3
-        :quickrand.seed
-        :quickrand.uniform(@max)
-    end
-  end
-
-  @doc """
-    serialize this call to ensure no overwriting....
-  """
-  def join(group), do: join(group, self())
-  def join(group, pid) do 
-    :ets.insert :nicelb_catalogue, {random_id, group, pid}
   end
 
   def get_members(group) do
@@ -47,16 +45,27 @@ defmodule Nicelb do
     end
   end
   
-  @doc """
-    serialize this call to ensure no overwriting...
-  """
   def leave(group), do: leave(group, self())
-  def leave(group, pid) do
-    for {id, p_group, p_pid} <- :ets.tab2list(:nicelb_catalogue), p_pid == pid and p_group == group do
-      true = :ets.delete :nicelb_catalogue, id
-    end
-  end
+  def leave(group, pid), do: NiceLB.Worker.leave(group, pid)
+  def join(group), do: join(group, self())
+  def join(group, pid), do: NiceLB.Worker.join(group, pid)
+end
 
+defmodule NiceLB.Worker do
+  use ExActor.GenServer
+  use Nicelb.Utils
+
+  definit do
+    {:ok, []}
+  end
+  defcall join(group, pid) do
+    reply :ets.insert(:nicelb_catalogue, {random_id, group, pid})
+  end
+  defcall leave(group, pid) do
+    (for {id, p_group, p_pid} <- :ets.tab2list(:nicelb_catalogue), p_pid == pid and p_group == group do
+      true = :ets.delete :nicelb_catalogue, id
+    end) |> reply
+  end
 end
 
 

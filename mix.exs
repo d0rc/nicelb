@@ -27,7 +27,8 @@ defmodule Nicelb.Mixfile do
   # Type `mix help deps` for more examples and options
   defp deps do
     [
-      {:quickrand, github: "okeuday/quickrand"}
+      {:quickrand, github: "okeuday/quickrand"},
+      {:exactor, github: "sasa1977/exactor"}
     ]
   end
 end
