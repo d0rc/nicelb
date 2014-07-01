@@ -1,13 +1,13 @@
 defmodule Nicelb do
   use Application
 
+  @max 1073741824
+
   def start(_type, _args) do
     import Supervisor.Spec, warn: false
 
     :ets.new :nicelb_catalogue, [:ordered_set, :public, :named_table, {:read_concurrency, true}, {:write_concurrency, true}]
-    # :ets.insert :nicelb_catalogue, {-1, 1073741824}
     children = [
-      # Define workers and child supervisors to be supervised
       # worker(Nicelb.Worker, [arg1, arg2, arg3])
     ]
 
@@ -18,10 +18,10 @@ defmodule Nicelb do
   defp random_id do
     case :erlang.get(:random_seed) do
       seed when is_tuple(seed) -> 
-        :quickrand.uniform(1073741824)
+        :quickrand.uniform(@max)
       :undefined -> 3
         :quickrand.seed
-        :quickrand.uniform(1073741824)
+        :quickrand.uniform(@max)
     end
   end
 
