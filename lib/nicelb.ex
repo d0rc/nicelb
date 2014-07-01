@@ -39,7 +39,11 @@ defmodule Nicelb do
 
   def get_random_pid(group), do: _get_random_pid(group)
   defp _get_random_pid(group) do
-    case :ets.lookup(:nicelb_catalogue, :ets.next(:nicelb_catalogue, random_id)) do
+    id = case random_id do
+      rid when :erlang.rem(rid, 2) == 0 -> :ets.next(:nicelb_catalogue, rid)
+      rid -> :ets.prev(:nicelb_catalogue, rid)
+    end
+    case :ets.lookup(:nicelb_catalogue, id) do
       [{_, ^group, pid}] -> pid
       _ -> _get_random_pid(group)
     end
@@ -52,7 +56,7 @@ defmodule Nicelb do
 end
 
 defmodule NiceLB.Worker do
-  use ExActor.GenServer
+  use ExActor.GenServer, export: :nicelb_worker
   use Nicelb.Utils
 
   definit do
