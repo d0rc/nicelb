@@ -34,7 +34,7 @@ defmodule Nicelb do
   end
 
   def get_members(group) do
-    for {id, p_group, pid} <- :ets.tab2list(:nicelb_catalogue), p_group == group do
+    for {_id, p_group, pid} <- :ets.tab2list(:nicelb_catalogue), p_group == group do
       pid
     end
   end
