@@ -78,15 +78,30 @@ defmodule NiceLB.Worker do
   end
 
   definit do
-    {:ok, []}
+    {:ok, %{}}
   end
-  defcall join(group, pid) do
-    drop_record(group, pid)
-    rid = get_empty_slot
-    reply :ets.insert(:nicelb_catalogue, {rid, group, pid})
+  defcall join(group, pid), state: state do
+    case :erlang.is_process_alive(pid) do
+      true ->
+        drop_record(group, pid)
+        rid = get_empty_slot
+        monitor = :erlang.monitor :process, pid
+        { 
+          :reply, 
+          :ets.insert(:nicelb_catalogue, {rid, group, pid}),
+          Map.put(state, monitor, group)
+        }
+      false ->
+        reply {:error, :process_is_dead}
+    end
   end
   defcall leave(group, pid) do
     drop_record(group, pid) |> reply
+  end
+
+  definfo msg = {:'DOWN', monitor, :process, pid, info}, state: state do
+    drop_record(Map.get(state, monitor), pid)
+    {:noreply, Map.delete(state, monitor)}
   end
 end
 

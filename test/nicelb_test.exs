@@ -7,7 +7,7 @@ defmodule NicelbTest do
   end
 
   test "can add/remove to different group" do
-  	pid = spawn fn -> :ok end
+  	pid = spawn fn -> :timer.sleep(60000) end
   	assert Nicelb.join(:publishersx, pid) == true
   	assert (Nicelb.get_members(:publishersx) |> length) == 1
   	assert (Nicelb.get_members(:publishers) |> length) == 10000
