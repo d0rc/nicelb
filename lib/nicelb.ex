@@ -34,7 +34,7 @@ defmodule Nicelb do
   end
 
   def get_members(group) do
-    for {id, pid_group, pid} <- :ets.tab2list(:nicelb_catalogue), id >= 0 and pid_group == group do
+    for {id, p_group, pid} <- :ets.tab2list(:nicelb_catalogue), p_group == group do
       pid
     end
   end
@@ -47,8 +47,14 @@ defmodule Nicelb do
     end
   end
   
+  @doc """
+    serialize this call to ensure no overwriting...
+  """
   def leave(group), do: leave(group, self())
   def leave(group, pid) do
+    for {id, p_group, p_pid} <- :ets.tab2list(:nicelb_catalogue), p_pid == pid and p_group == group do
+      true = :ets.delete :nicelb_catalogue, id
+    end
   end
 
 end
