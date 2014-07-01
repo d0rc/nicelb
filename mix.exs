@@ -12,7 +12,7 @@ defmodule Nicelb.Mixfile do
   #
   # Type `mix help compile.app` for more information
   def application do
-    [applications: [],
+    [applications: [:quickrand],
      mod: {Nicelb, []}]
   end
 
@@ -26,6 +26,8 @@ defmodule Nicelb.Mixfile do
   #
   # Type `mix help deps` for more examples and options
   defp deps do
-    []
+    [
+      {:quickrand, github: "okeuday/quickrand"}
+    ]
   end
 end
