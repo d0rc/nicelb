@@ -15,4 +15,10 @@ defmodule NicelbTest do
   	Nicelb.leave(:publishersx, pid)
   	assert (Nicelb.get_members(:publishersx) |> length) == 0
   end
+
+  test "we can query pool" do
+  	for i <- 1..1000 do
+  		assert {:ok, i} == NicelbTest.TestServer.testcall(Nicelb.get_random_pid(:publishers), i)
+  	end
+  end
 end
