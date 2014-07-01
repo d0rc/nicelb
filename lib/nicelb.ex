@@ -59,16 +59,34 @@ defmodule NiceLB.Worker do
   use ExActor.GenServer, export: :nicelb_worker
   use Nicelb.Utils
 
+  defp drop_record(group, pid) do
+    for {id, p_group, p_pid} <- :ets.tab2list(:nicelb_catalogue), p_pid == pid and p_group == group do
+      true = :ets.delete :nicelb_catalogue, id
+    end
+  end
+  defp is_empty?(slot_id) do
+    case :ets.lookup(:nicelb_catalogue, slot_id) do
+      [] -> true
+      [el] when is_tuple(el) -> false
+    end
+  end
+  defp get_empty_slot do
+    case (rid = random_id) |> is_empty? do
+      true -> rid
+      false -> get_empty_slot
+    end 
+  end
+
   definit do
     {:ok, []}
   end
   defcall join(group, pid) do
-    reply :ets.insert(:nicelb_catalogue, {random_id, group, pid})
+    drop_record(group, pid)
+    rid = get_empty_slot
+    reply :ets.insert(:nicelb_catalogue, {rid, group, pid})
   end
   defcall leave(group, pid) do
-    (for {id, p_group, p_pid} <- :ets.tab2list(:nicelb_catalogue), p_pid == pid and p_group == group do
-      true = :ets.delete :nicelb_catalogue, id
-    end) |> reply
+    drop_record(group, pid) |> reply
   end
 end
 
